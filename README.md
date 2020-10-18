@@ -10,7 +10,7 @@ It has a header bar that is common across all html files. It indicates this by r
 Using HtmlWebpackPlugin:  
 `<%= require("html-loader!./header.html") %>`
 
-Using hal:
+Using hal:  
 `<%header.html %/>`
 
 But if "header.html" wants to include its own html files, the HtmlWebpackPlugin cannot do this.
@@ -27,7 +27,7 @@ Obviously, the surrounding feature set is lacking compared to HtmlWebpackPlugin,
 Currently, usage is fairly static. Configuration is the next goal.    
 The user provides a yaml file that indicates what the target files are. The user also provides a src directory, and a dst directory.  
 Example:  
-`hal ./input.yaml --src ./src --dst ./dst`  
+`hal -i ./input.yaml --src ./src --dst ./dst`  
 "input.yaml" provides a list of files, which are then streamed from ./src/\<file\>, and saved to ./dst/\<file\>.  
 
 Currently, hal attacks js-beautify in html mode onto the output stream, instead of handling pretty-printing itself.
