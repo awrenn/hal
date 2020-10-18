@@ -1,1 +1,3 @@
-- input.html
+targets:
+  - src: input.html
+    dst: index.html

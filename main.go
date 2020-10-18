@@ -20,6 +20,24 @@ func main() {
 		Name:   "hal",
 		Usage:  "hal - compile html chunks into full files",
 		Action: runHal,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "src",
+				Value: SRC_DIR,
+				Usage: "Src directory to find html snippets in",
+			},
+			&cli.StringFlag{
+				Name:  "dst",
+				Value: DST_DIR,
+				Usage: "Dst directory to write output html to",
+			},
+			&cli.StringFlag{
+				Name:    "input",
+				Aliases: []string{"i"},
+				Value:   INPUT_LIST,
+				Usage:   "Input yaml file to read the input from",
+			},
+		},
 	}
 	err := app.Run(os.Args)
 	if err != nil {
@@ -27,24 +45,28 @@ func main() {
 	}
 }
 
-func runHal(_c *cli.Context) error {
-	fileList := make([]string, 0)
-	raw, err := ioutil.ReadFile(INPUT_LIST)
+func runHal(c *cli.Context) error {
+	inputConf := InputConfig{}
+	raw, err := ioutil.ReadFile(c.String("input"))
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(raw, &fileList)
-	if err != nil {
-		return err
-	}
-
-	err = os.MkdirAll(DST_DIR, 0700)
+	err = yaml.Unmarshal(raw, &inputConf)
 	if err != nil {
 		return err
 	}
 
-	for _, file := range fileList {
-		err := processFile(file)
+	conf := HalConfig{
+		Dst: c.String("dst"),
+		Src: c.String("src"),
+	}
+	err = os.MkdirAll(conf.Dst, 0700)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range inputConf.Targets {
+		err := processFile(conf, file.Src, file.Dst)
 		if err != nil {
 			return err
 		}
