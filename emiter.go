@@ -10,23 +10,27 @@ import (
 	"path/filepath"
 
 	"github.com/awrenn/hal/parser"
+
+	"github.com/joomcode/errorx"
 )
 
-func processFile(src string) error {
-	out, err := openFile(filepath.Join(DST_DIR, src), "js-beautify")
+func processFile(conf HalConfig, src, dst string) error {
+	// TODO acwrenn pass in formatter from conf
+	out, err := openFile(filepath.Join(conf.Dst, dst), "js-beautify")
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 	indentCount := 0
 	refHistory := make([]string, 0)
-	return processBytesIntoWriter(src, out, indentCount, refHistory)
+	return processBytesIntoWriter(conf, src, out, indentCount, refHistory)
 }
 
-func processBytesIntoWriter(src string, out io.Writer, indentCount int, refHistory []string) error {
-	raw, err := ioutil.ReadFile(filepath.Join(SRC_DIR, src))
+func processBytesIntoWriter(conf HalConfig, src string, out io.Writer, indentCount int, refHistory []string) error {
+	fname := filepath.Join(conf.Src, src)
+	raw, err := ioutil.ReadFile(fname)
 	if err != nil {
-		return err
+		return errorx.Decorate(err, fmt.Sprintf("Failed to read file %s", fname))
 	}
 
 	for {
@@ -46,10 +50,10 @@ func processBytesIntoWriter(src string, out io.Writer, indentCount int, refHisto
 		if tag.Kind == parser.TagReference {
 			refed := tag.Inner.Reference()
 			if Contains(refHistory, refed) {
-				return parser.ReferenceCycle.New(fmt.Sprintf("Reference cycle detected in file %s - make sure nothing it depends on depends on it", src))
+				return parser.ReferenceCycle.New(fmt.Sprintf("Reference cycle detected in file %s - make sure nothing it depends, on depends on it", src))
 			}
 			refHistory = append(refHistory, tag.Inner.Reference())
-			err := processBytesIntoWriter(refed, out, indentCount, refHistory)
+			err := processBytesIntoWriter(conf, refed, out, indentCount, refHistory)
 			if err != nil {
 				return err
 			}
@@ -85,7 +89,7 @@ func openFile(fname, formaterCommand string) (io.WriteCloser, error) {
 		if formaterCommand == "js-beautify" {
 			args = []string{"-f", "-", "--type", "html"}
 		}
-        cmd := exec.Command(formaterCommand, args...)
+		cmd := exec.Command(formaterCommand, args...)
 		stdin, err := cmd.StdinPipe()
 		if err != nil {
 			return nil, err
