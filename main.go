@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
 )
 
@@ -15,30 +16,38 @@ const (
 )
 
 func main() {
+	app := &cli.App{
+		Name:   "hal",
+		Usage:  "hal - compile html chunks into full files",
+		Action: runHal,
+	}
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Printf("%+v\n", err)
+	}
+}
+
+func runHal(_c *cli.Context) error {
 	fileList := make([]string, 0)
 	raw, err := ioutil.ReadFile(INPUT_LIST)
 	if err != nil {
-		exit(err)
+		return err
 	}
 	err = yaml.Unmarshal(raw, &fileList)
 	if err != nil {
-		exit(err)
+		return err
 	}
 
 	err = os.MkdirAll(DST_DIR, 0700)
 	if err != nil {
-		exit(err)
+		return err
 	}
 
 	for _, file := range fileList {
 		err := processFile(file)
 		if err != nil {
-			exit(err)
+			return err
 		}
 	}
-	os.Exit(0)
-}
-func exit(err error) {
-	log.Printf("%+v\n", err)
-	os.Exit(1)
+	return nil
 }
